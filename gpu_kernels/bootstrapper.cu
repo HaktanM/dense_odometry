@@ -151,6 +151,7 @@ void DepthMapEstimator::compute_depth_with_sigma(float* h_depth, float* h_depth_
 
     // Initialize the propagated depth map
     cudaMemcpy(d_depth_prior_next, h_depth_prior, 2*_depth_size, cudaMemcpyHostToDevice);
+    // cudaMemcpy(d_depth_prior, h_depth_prior, 2*_depth_size, cudaMemcpyHostToDevice);
 
     // Compute the estimated depth map on gpu
     compute_depth_gpu<<<numBlocks, threadsPerBlock>>>(d_depth, d_depth_prior, d_depth_prior_next, d_flow, d_pixels, d_bearings, d_KR, d_b, _height, _width);

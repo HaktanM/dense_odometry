@@ -20,6 +20,10 @@ find_package(Ceres REQUIRED)
 # Enable CUDA support
 find_package(CUDA REQUIRED)
 
+# Find and link Python and NumPy
+find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
+find_package(Python3 REQUIRED)
+
 # Add the include directory to the include path
 include_directories(
     include
@@ -32,7 +36,7 @@ include_directories(
 file(GLOB SOURCES "src/*.cpp" "gpu_kernels/*.cu")
 
 # Create executable
-add_executable(dene ${SOURCES})
+add_executable(dene ${SOURCES})  
 
 # set(GPU_KERNELS "/home/hakito/cpp_scripts/dense_odometry/libgpu-kernels.so")
 
@@ -43,6 +47,7 @@ target_link_libraries (dene
     ${CERES_LIBRARIES}
     ${CUDA_LIBRARIES}
     ${GPU_KERNELS}
+    Python3::Python
 )
 
 # set_target_properties(dene PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

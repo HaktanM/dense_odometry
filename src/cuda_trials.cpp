@@ -13,6 +13,87 @@
 #include "utils.hpp"
 #include "cam_model.hpp"
 
+#include <matplotlibcpp.h>
+
+namespace plt = matplotlibcpp;
+
+
+std::vector<cv::Mat> error_histograms(cv::Mat depth_map, cv::Mat estimated_depth_map, long int totalPixCount){
+
+    // Copmute depth estimation error
+    cv::Mat depth_map_err = estimated_depth_map - depth_map;
+
+    // Compute percentage error
+    cv::Mat depth_map_err_percentage;
+    cv::divide(depth_map_err, depth_map, depth_map_err_percentage);
+    depth_map_err_percentage = depth_map_err_percentage * 100;
+
+    // Define the number of bins
+    int histSize = 200; // Number of intensity levels for grayscale image
+
+    // Set the ranges for pixel values (0-255 for grayscale)
+    float range[] = { -10, 10 };
+    const float* histRange = { range };
+
+    // Create a cv::Mat to store the histogram
+    cv::Mat hist_err, hist_err_perc;
+
+    // Calculate the histogram
+    cv::calcHist(&depth_map_err, 1, 0, cv::Mat(), hist_err, 1, &histSize, &histRange);
+    cv::calcHist(&depth_map_err_percentage, 1, 0, cv::Mat(), hist_err_perc, 1, &histSize, &histRange);
+
+    // Convert the histogram data to a std::vector for matplotlibcpp
+    std::vector<float> histData_err(histSize);
+    for (int i = 0; i < histSize; i++) {
+        histData_err[i] = hist_err.at<float>(i) / ((float) totalPixCount);
+    }
+
+    // Convert the histogram data to a std::vector for matplotlibcpp
+    std::vector<float> histData_err_perc(histSize);
+    for (int i = 0; i < histSize; i++) {
+        histData_err_perc[i] = hist_err_perc.at<float>(i) / ((float) totalPixCount);
+    }
+
+    // Prepare x-axis values for the histogram
+    std::vector<float> xValues(histSize);
+    for (int i = 0; i < histSize; i++) {
+        xValues[i] = (i * (range[1] - range[0]) / histSize) + range[0];
+    }
+
+    // Plot the histogram using matplotlibcpp
+    plt::figure_size(640, 512); // Set figure size
+    plt::plot(xValues,histData_err);
+    plt::title("Depth Error Histogram");
+    plt::xlabel("Error");
+    plt::ylabel("PDF");
+    plt::ylim(0.0, 0.5);
+    plt::grid(true); // Add grid for better visibility
+    
+    // Render the plot to a buffer
+    plt::save("DepthErrorHist.png"); // Save to a temporary file
+    cv::Mat depth_err_hist_img = cv::imread("DepthErrorHist.png"); // Load the saved image
+
+    // cv::imshow("Depth Error Histogram", histogramImage);
+
+    plt::clf();
+    plt::figure_size(640, 512); // Set figure size
+    plt::plot(xValues,histData_err_perc);
+    plt::title("Depth Error Percentage Histogram");
+    plt::xlabel("Error");
+    plt::ylabel("PDF");
+    plt::ylim(0.0, 0.2);
+    plt::grid(true); // Add grid for better visibility
+    
+    // Render the plot to a buffer
+    plt::save("DepthErrorPercentageHist.png"); // Save to a temporary file
+    cv::Mat depth_err_perc_hist_img = cv::imread("DepthErrorPercentageHist.png"); // Load the saved image
+
+    std::vector<cv::Mat> histograms;
+    histograms.push_back(depth_err_hist_img);
+    histograms.push_back(depth_err_perc_hist_img);
+
+    return histograms;
+}
 int main() {
     CamModel cam_model;
 
@@ -21,6 +102,7 @@ int main() {
 
     int width = cam_model._width;
     int height = cam_model._height;
+    long int totalPixCount = width*height;
 
     // Size of the required memory
     int depth_size = width * height * sizeof(float);
@@ -106,9 +188,13 @@ int main() {
         // Output the elapsed time in milliseconds
         std::cout << "Time taken: " << elapsed.count() << " milliseconds" << std::endl;
 
+        
+
+        
+
 
         //// VISUALIZE
-        // Depth Map
+        // Depth Map       
         cv::Mat depth_map = cv::imread(path_to_depth, cv::IMREAD_UNCHANGED);
         cv::flip(depth_map, depth_map, 0);
         cv::Mat depth_map_vis = depth_map / 100.0 * 255.0;
@@ -117,8 +203,8 @@ int main() {
         cv::putText(depth_map_vis, "Depth Map", cv::Point(10, 50), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(100, 255, 100), 2);
 
         // Estimated Depth Map
-        cv::Mat estimated_dept(height, width, CV_32F, depthPtr);
-        cv::Mat estimated_depth_vis = estimated_dept / 100.0 * 255.0;
+        cv::Mat estimated_depth(height, width, CV_32F, depthPtr);
+        cv::Mat estimated_depth_vis = estimated_depth / 100.0 * 255.0;
         estimated_depth_vis.convertTo(estimated_depth_vis, CV_8U);
         cv::cvtColor(estimated_depth_vis, estimated_depth_vis, cv::COLOR_GRAY2BGR);
         cv::putText(estimated_depth_vis, "Estimated Depth Map", cv::Point(10, 50), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(100, 255, 100), 2);
@@ -133,21 +219,26 @@ int main() {
         // Image Frame
         cv::Mat frame = cv::imread(path_to_img_curr);
 
+        // Depth Error
+        std::vector<cv::Mat> histograms = error_histograms(depth_map, estimated_depth, totalPixCount);
+        cv::Mat depth_err_hist_img = histograms.at(0);
+        cv::Mat depth_err_perc_hist_img = histograms.at(1);
+
         cv::Mat out_up, out_down, out;
 
         cv::hconcat(frame, depth_sigma_vis, out_up);
+        cv::hconcat(out_up, depth_err_hist_img, out_up);
+
         cv::hconcat(depth_map_vis, estimated_depth_vis, out_down);
+        cv::hconcat(out_down, depth_err_perc_hist_img, out_down);
+
         cv::vconcat(out_up, out_down, out);
 
         cv::imshow("out", out);
 
-        std::string filename = "/home/hakito/cpp_scripts/dense_odometry/out_img/" + std::to_string(idx) + ".png";
+        std::string filename = "/home/hakito/cpp_scripts/dense_odometry/out_img3/" + std::to_string(idx) + ".png";
         cv::imwrite(filename, out);
 
-
-        // Estimated Flow
-        // cv::Mat estimated_flow_bgr = VU::flowToColor(estimated_flow);
-        // cv::imshow("Estimated Flow", estimated_flow_bgr);
         cv::waitKey(10);
     }
 

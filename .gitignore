@@ -7,6 +7,8 @@ cmake_install.cmake
 # Ignore build and testing directories
 build/
 out_img/
+out_img2/
+out_img3/
 
 # Ignore Makefile
 Makefile
