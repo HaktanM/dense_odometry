@@ -1,0 +1,15 @@
+# Ignore CMake-related files
+.cmake/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+
+# Ignore build and testing directories
+build/
+out_img/
+
+# Ignore Makefile
+Makefile
+
+# Ignore any other specific files
+dene
