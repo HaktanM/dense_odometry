@@ -221,7 +221,7 @@ cv::Mat VU::flowToColor(const cv::Mat &flow_in) {
             cv::Vec2f flow_at_xy = flow.at<cv::Vec2f>(y, x);
             float fx = flow_at_xy[0];
             float fy = flow_at_xy[1];
-            float rad = sqrt(fx * fx + fy * fy);
+            float rad = sqrt(fx * fx + fy * fy) / 9.0;
             float angle = atan2(-fy, -fx) / CV_PI;
             float fk = (angle + 1.0) / 2.0 * (ncols - 1);
             int k0 = (int)fk;
@@ -322,6 +322,7 @@ std::vector<cv::Mat> VU::depthErrorHistogram(cv::Mat depth_map, cv::Mat estimate
 
     // Plot the histogram using matplotlibcpp
     plt::close();
+    plt::clf();
     plt::figure_size(640, 512); // Set figure size
     plt::plot(xValues,histData_err);
     plt::title("Depth Error Histogram");
@@ -329,6 +330,7 @@ std::vector<cv::Mat> VU::depthErrorHistogram(cv::Mat depth_map, cv::Mat estimate
     plt::ylabel("PDF");
     plt::ylim(0.0, 0.5);
     plt::grid(true); // Add grid for better visibility
+    plt::clf();
     
     // Render the plot to a buffer
     plt::save("DepthErrorHist.png"); // Save to a temporary file

@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CAM_MODEL_HEADER
+#define CAM_MODEL_HEADER
+
 // Include standard libraries for std::cout manipulation
 #include <iostream>
 #include <sstream>
@@ -44,3 +46,6 @@ public:
 
     void getVectorizedPixels();
 }; // cam_model
+
+
+#endif // CAM_MODEL_HEADER
