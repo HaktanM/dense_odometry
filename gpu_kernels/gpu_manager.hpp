@@ -1,13 +1,12 @@
 #pragma ONCE
 
-
 #include <cuda_runtime.h>
 #include <curand_kernel.h> // for random numbers
 #include <iostream>
 
-struct DepthMapEstimator{
+struct ManagerGPU{
 public:
-    DepthMapEstimator(float *h_pixels, float *h_bearings, int height, int width): _height(height), _width(width)
+    ManagerGPU(float *h_pixels, float *h_bearings, int height, int width): _height(height), _width(width)
     {   
 
         _depth_size = _width * _height * sizeof(float);

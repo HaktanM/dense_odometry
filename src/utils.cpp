@@ -276,6 +276,91 @@ cv::Mat VU::warpFlow(const cv::Mat& img, const cv::Mat& flow) {
     return warpedImg;
 }
 
+
+
+std::vector<cv::Mat> VU::depthErrorHistogram(cv::Mat depth_map, cv::Mat estimated_depth_map, long int totalPixCount){
+
+    // Copmute depth estimation error
+    cv::Mat depth_map_err = estimated_depth_map - depth_map;
+
+    // Compute percentage error
+    cv::Mat depth_map_err_percentage;
+    cv::divide(depth_map_err, depth_map, depth_map_err_percentage);
+    depth_map_err_percentage = depth_map_err_percentage * 100;
+
+    // Define the number of bins
+    int histSize = 200; // Number of intensity levels for grayscale image
+
+    // Set the ranges for pixel values (0-255 for grayscale)
+    float range[] = { -10, 10 };
+    const float* histRange = { range };
+
+    // Create a cv::Mat to store the histogram
+    cv::Mat hist_err, hist_err_perc;
+
+    // Calculate the histogram
+    cv::calcHist(&depth_map_err, 1, 0, cv::Mat(), hist_err, 1, &histSize, &histRange);
+    cv::calcHist(&depth_map_err_percentage, 1, 0, cv::Mat(), hist_err_perc, 1, &histSize, &histRange);
+
+    // Convert the histogram data to a std::vector for matplotlibcpp
+    std::vector<float> histData_err(histSize);
+    for (int i = 0; i < histSize; i++) {
+        histData_err[i] = hist_err.at<float>(i) / ((float) totalPixCount);
+    }
+
+    // Convert the histogram data to a std::vector for matplotlibcpp
+    std::vector<float> histData_err_perc(histSize);
+    for (int i = 0; i < histSize; i++) {
+        histData_err_perc[i] = hist_err_perc.at<float>(i) / ((float) totalPixCount);
+    }
+
+    // Prepare x-axis values for the histogram
+    std::vector<float> xValues(histSize);
+    for (int i = 0; i < histSize; i++) {
+        xValues[i] = (i * (range[1] - range[0]) / histSize) + range[0];
+    }
+
+    // Plot the histogram using matplotlibcpp
+    plt::close();
+    plt::figure_size(640, 512); // Set figure size
+    plt::plot(xValues,histData_err);
+    plt::title("Depth Error Histogram");
+    plt::xlabel("Error");
+    plt::ylabel("PDF");
+    plt::ylim(0.0, 0.5);
+    plt::grid(true); // Add grid for better visibility
+    
+    // Render the plot to a buffer
+    plt::save("DepthErrorHist.png"); // Save to a temporary file
+    cv::Mat depth_err_hist_img = cv::imread("DepthErrorHist.png"); // Load the saved image
+
+    // cv::imshow("Depth Error Histogram", histogramImage);
+
+    plt::clf();
+    plt::close();
+
+    plt::figure_size(640, 512); // Set figure size
+    plt::plot(xValues,histData_err_perc);
+    plt::title("Depth Error Percentage Histogram");
+    plt::xlabel("Error / Actual * 100");
+    plt::ylabel("PDF");
+    plt::ylim(0.0, 0.2);
+    plt::grid(true); // Add grid for better visibility
+    
+    // Render the plot to a buffer
+    plt::save("DepthErrorPercentageHist.png"); // Save to a temporary file
+    cv::Mat depth_err_perc_hist_img = cv::imread("DepthErrorPercentageHist.png"); // Load the saved image
+
+    std::vector<cv::Mat> histograms;
+    histograms.push_back(depth_err_hist_img);
+    histograms.push_back(depth_err_perc_hist_img);
+
+    // Close opened windows
+    plt::close(); 
+
+    return histograms;
+}
+
 Eigen::Matrix3d LU::Skew(Eigen::Vector3d vec){
     Eigen::Matrix3d S;
     S <<    0.0, -vec[2], vec[1],

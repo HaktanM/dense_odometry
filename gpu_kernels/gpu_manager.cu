@@ -1,8 +1,8 @@
 #include <cuda_runtime.h>
-#include "bootstrapper.hpp"
+#include "gpu_manager.hpp"
 
 
-void DepthMapEstimator::print_data(){
+void ManagerGPU::print_data(){
     int size = 10 * sizeof(float);
     float *data = (float*)malloc(size);
 
@@ -48,7 +48,7 @@ __global__ void propapropagate_depth_prior_gpu(float *flow, float *depth_prior, 
     }
 }
 
-// void DepthMapEstimator::propagate_depth_prior(){
+// void ManagerGPU::propagate_depth_prior(){
 //     // Create a copy of the depth prior
 //     cudaMemcpy(d_depth_prior_tmp, d_depth_prior, 2*_depth_size, cudaMemcpyDeviceToDevice);
 
@@ -139,7 +139,7 @@ __global__ void compute_depth_gpu(float* depth, float* depth_prior, float* depth
     }
 }
 
-void DepthMapEstimator::compute_depth_with_sigma(float* h_depth, float* h_depth_sigma, float* h_flow, float* h_KR, float* h_b){
+void ManagerGPU::compute_depth_with_sigma(float* h_depth, float* h_depth_sigma, float* h_flow, float* h_KR, float* h_b){
     // Load parameters to device
     cudaMemcpy(d_flow, h_flow, _pixel_coord_size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_KR, h_KR, _KR_size, cudaMemcpyHostToDevice);
@@ -215,7 +215,7 @@ __global__ void compute_flow_gpu(float* depth, float* pixels, float* bearings, f
     return;
 }
 
-void DepthMapEstimator::compute_optical_flow(float* depth, float* flow, float* KR, float* b){
+void ManagerGPU::compute_optical_flow(float* depth, float* flow, float* KR, float* b){
     // Define grid and block dimensions
     dim3 threadsPerBlock(_width);
     dim3 numBlocks(_height);

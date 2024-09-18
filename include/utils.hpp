@@ -14,6 +14,8 @@
 
 #include <cmath> // Required to compute sin and cos
 
+#include <matplotlibcpp.h>
+namespace plt = matplotlibcpp;
 
 namespace DMU{ // DMU refers for Data Management Utils
     // A Utility to Load CSV Files
@@ -78,6 +80,7 @@ namespace VU{ // VU Stands For Visualization Tools
     void makeColorWheel(std::vector<cv::Vec3b> &colorwheel);
     cv::Mat flowToColor(const cv::Mat &flow);
     cv::Mat warpFlow(const cv::Mat& img, const cv::Mat& flow);
+    std::vector<cv::Mat> depthErrorHistogram(cv::Mat depth_map, cv::Mat estimated_depth_map, long int totalPixCount);
 } // namespace VU
 
 
@@ -86,3 +89,6 @@ namespace LU{ // LU stands for Lie Algebra Utils
     Eigen::Matrix3d Skew(Eigen::Vector3d vec);
     Eigen::Matrix3d exp_SO3(Eigen::Vector3d psi);
 } // namespace LU
+
+
+
