@@ -65,7 +65,7 @@ __global__ void propapropagate_depth_prior_gpu(float *flow, float *depth_prior, 
 
 
 
-__global__ void compute_depth_gpu(float* depth, float* depth_prior, float* depth_next, float* flow, float* pixels, float* bearings, float* KR, float* b, int height, int width) {
+__global__ void compute_depth_gpu(float* depth, float* depth_next, float* flow, float* pixels, float* bearings, float* KR, float* b, int height, int width) {
     int row_idx = blockIdx.x;
     int col_idx = threadIdx.x;
 
@@ -109,11 +109,13 @@ __global__ void compute_depth_gpu(float* depth, float* depth_prior, float* depth
     float z_num = (a1 * b3 - b1)*(w1 - a1 * w3) + (a2 * b3 - b2)*(w2 - a2 * w3);
     float z_deno = (w1 - a1 * w3)*(w1 - a1 * w3) + (w2 - a2 * w3)*(w2 - a2 * w3);
 
+    // New computed depth and its covariance
     float pd_new = z_num / z_deno;          // pd stands for pixel depth
-    float pd_prior = depth_prior[pix_idx];  // pd stands for pixel depth
-
     float sigma_new = 0.5;
-    float sigma_prior = depth_prior[totalPixCount + pix_idx];
+
+    // We have a depth prior from previous iterations
+    float pd_prior = depth[pix_idx];        // pd stands for pixel depth
+    float sigma_prior = depth[totalPixCount + pix_idx];
 
     float sigma_sum = sigma_new + sigma_prior;
     float pd = (sigma_prior * pd_new + sigma_new * pd_prior) / sigma_sum;
@@ -121,10 +123,7 @@ __global__ void compute_depth_gpu(float* depth, float* depth_prior, float* depth
     float sigma = sigma_new * sigma_prior / sigma_sum;
 
     depth[pix_idx] = pd;
-
-    depth_prior[pix_idx] = pd;
-    depth_prior[totalPixCount + pix_idx] = sigma;
-
+    depth[totalPixCount + pix_idx] = sigma;
 
     float propagated_x = col_idx + flow_x; // x is column index
     float propagated_y = row_idx + flow_y; // y is row index
@@ -135,7 +134,7 @@ __global__ void compute_depth_gpu(float* depth, float* depth_prior, float* depth
 
         int new_pix_idx = new_y * width + new_x;
         depth_next[new_pix_idx] = w3 * pd + b3; // Copy paste the depth value
-        depth_next[totalPixCount + new_pix_idx] = depth_prior[totalPixCount + pix_idx] * w3 * w3 * 2; // Copy past the sigma
+        depth_next[totalPixCount + new_pix_idx] = depth[totalPixCount + pix_idx] * w3 * w3 * 2; // Copy past the sigma
     }
 }
 
@@ -150,20 +149,20 @@ void ManagerGPU::compute_depth_with_sigma(float* h_depth, float* h_depth_sigma, 
     dim3 numBlocks(_height); // Each block processes an individual row
 
     // Initialize the propagated depth map
-    cudaMemcpy(d_depth_prior_next, h_depth_prior, 2*_depth_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_depth_next, h_depth_prior, 2*_depth_size, cudaMemcpyHostToDevice);
     // cudaMemcpy(d_depth_prior, h_depth_prior, 2*_depth_size, cudaMemcpyHostToDevice);
 
     // Compute the estimated depth map on gpu
-    compute_depth_gpu<<<numBlocks, threadsPerBlock>>>(d_depth, d_depth_prior, d_depth_prior_next, d_flow, d_pixels, d_bearings, d_KR, d_b, _height, _width);
+    compute_depth_gpu<<<numBlocks, threadsPerBlock>>>(d_depth, d_depth_next, d_flow, d_pixels, d_bearings, d_KR, d_b, _height, _width);
 
     // Load depth to host
     cudaMemcpy(h_depth, d_depth, _depth_size, cudaMemcpyDeviceToHost);
 
     // Load depth uncertantiy to host
-    cudaMemcpy(h_depth_sigma, d_depth_prior+_width*_height, _depth_size, cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_depth_sigma, d_depth+_width*_height, _depth_size, cudaMemcpyDeviceToHost);
 
     // Propagate the depth map
-    cudaMemcpy(d_depth_prior, d_depth_prior_next, 2*_depth_size, cudaMemcpyDeviceToDevice);
+    cudaMemcpy(d_depth, d_depth_next, 2*_depth_size, cudaMemcpyDeviceToDevice);
 
     // Sync the device to ensure kernel execution is complete
     cudaDeviceSynchronize();

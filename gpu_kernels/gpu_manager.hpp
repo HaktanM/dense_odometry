@@ -22,8 +22,7 @@ public:
         cudaMemcpy(d_bearings, h_bearings, _pixel_coord_size, cudaMemcpyHostToDevice);
 
         cudaMalloc((void**)&d_depth, 2*_depth_size); // in d_depth, we both have the depth and its covariance
-        cudaMalloc((void**)&d_depth_prior, 2*_depth_size); // in d_depth, we both have the depth and its covariance
-        cudaMalloc((void**)&d_depth_prior_next, 2*_depth_size); // in d_depth, we both have the depth and its covariance
+        cudaMalloc((void**)&d_depth_next, 2*_depth_size); // in d_depth, we both have the depth and its covariance
 
         cudaMalloc((void**)&d_flow, _pixel_coord_size); // Allocate memory
 
@@ -35,7 +34,7 @@ public:
         std::fill(h_depth_prior, h_depth_prior + _width*_height, 10.0f);  // 10.0 is just a dummy number
         std::fill(h_depth_prior + _width*_height, h_depth_prior + 2*_width*_height, 10000.0f);  // initial covariance of the depth prior is high
         // Now initialize the depth prior in device
-        cudaMemcpy(d_depth_prior, h_depth_prior, 2*_depth_size, cudaMemcpyHostToDevice);
+        cudaMemcpy(d_depth, h_depth_prior, 2*_depth_size, cudaMemcpyHostToDevice);
     }
 
     void print_data();
@@ -47,8 +46,7 @@ private:
     float *d_pixels;
 
     float *d_depth;
-    float *d_depth_prior;
-    float *d_depth_prior_next;
+    float *d_depth_next;
     float *d_flow;
     
     float *h_depth_prior;
