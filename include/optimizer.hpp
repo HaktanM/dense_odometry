@@ -45,6 +45,7 @@ namespace SOLVER{
         Eigen::Vector3d t_c0_c1_innovated = _t_c0_c1 + t_innovation;
 
         _manager->computeFlowResidual(R_c0_c1_innovated, t_c0_c1_innovated);
+
         for (int i = 0; i < _residual_size; ++i) {
             residual[i] = static_cast<double>(_manager->_flowResidualPtr[i]);
         }

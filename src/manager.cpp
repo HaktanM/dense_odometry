@@ -52,7 +52,7 @@ void Manager::computeEstimatedDepthMap(int idx){
     Eigen::Vector3f b  = (_cam_model.K * t_c0_c1).cast<float>();
 
     float* KR_Ptr = KR.data();
-    float* bPtr = b.data();
+    float* bPtr   = b.data();
 
     _GPUhandler.refineDepthMap(_depthPtr, _depthVariancePtr, flowPtr, KR_Ptr, bPtr);
 }
@@ -80,12 +80,16 @@ void Manager::computeEstimatedFlow(int idx){
 
 
 void Manager::computeFlowResidual(Eigen::Matrix3d R_c0_c1, Eigen::Vector3d t_c0_c1) const{
+
+    Eigen::Matrix3f K  = _cam_model.K.cast<float>();
     Eigen::Matrix3f KR = (_cam_model.K * R_c0_c1).cast<float>();
     Eigen::Vector3f b  = (_cam_model.K * t_c0_c1).cast<float>();
 
+    float* K_Ptr      = K.data();
     float* KR_Ptr = KR.data();
-    float* bPtr = b.data();
-    _GPUhandler.getFowResidual(_flowResidualPtr, KR_Ptr, bPtr);
+    float* bPtr   = b.data();
+
+    _GPUhandler.getFowResidual(_flowResidualPtr, _flowJacobeanPtr, K_Ptr, KR_Ptr, bPtr);
 }
 
 // void Manager::computeFlowResidual(int idx){

@@ -12,7 +12,7 @@ public:
 
         _depth_size = _width * _height * sizeof(float);
         _pixel_coord_size = 2 * _width * _height * sizeof(float);
-        _KR_size = 9 * sizeof(float);
+        _K_size = 9 * sizeof(float);
         _b_size  = 3 * sizeof(float);
 
 
@@ -27,9 +27,11 @@ public:
 
         cudaMalloc((void**)&d_flow, _pixel_coord_size); // Allocate memory
         cudaMalloc((void**)&d_estimated_flow, _pixel_coord_size); // Allocate memory
-        cudaMalloc((void**)&d_flow_residual, _pixel_coord_size); // Allocate memory
+        cudaMalloc((void**)&d_flow_residual, _pixel_coord_size);  // Allocate memory 
+        cudaMalloc((void**)&d_jacobean, _pixel_coord_size * 6);   // We have 6 states (3 incremental rotation, 3 incremental translation)
 
-        cudaMalloc((void**)&d_KR, _KR_size);
+        cudaMalloc((void**)&d_K, _K_size);
+        cudaMalloc((void**)&d_KR, _K_size);
         cudaMalloc((void**)&d_b, _b_size);
 
         // Initialize the depth prior
@@ -45,8 +47,10 @@ public:
     void refineDepthMap(float* h_depth,float* h_depth_sigma, float* h_flow, float* h_KR, float* h_b);
     void propagateDepth();
 
-    void getFowResidual(float* h_flow_residual, float* h_KR, float* h_b) const;
+    void getFowResidual(float* h_flow_residual, float *h_jacobean, float* h_K, float* h_KR, float* h_b) const;
     void getEstimatedFlow(float* h_estimated_flow, float* h_KR, float* h_b) const;
+
+    void testMatrixMultiplication(float* h_A, float* h_B, float *h_C, int W, int Hidden, int H);
 
 private:
     float *d_bearings;
@@ -58,9 +62,11 @@ private:
     float *d_flow;
     float *d_estimated_flow;
     float *d_flow_residual;
+    float *d_jacobean;
 
     float *h_depth_prior;
 
+    float *d_K;  
     float *d_KR;  
     float *d_b;  
 
@@ -68,7 +74,7 @@ private:
     int _height, _width;
     int _depth_size;
     int _pixel_coord_size;
-    int _KR_size;
+    int _K_size;
     int _b_size;
 
 };

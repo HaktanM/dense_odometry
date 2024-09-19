@@ -19,6 +19,7 @@ find_package(Ceres REQUIRED)
 
 # Enable CUDA support
 find_package(CUDA REQUIRED)
+set(CMAKE_CUDA_ARCHITECTURES "75")
 
 # Find and link Python and NumPy
 find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)

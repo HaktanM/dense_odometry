@@ -2,5 +2,16 @@ mkdir build
 cd build
 
 cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DUSE_OPENMP=ON ..
+
+cmake -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12.5/bin/nvcc -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DUSE_OPENMP=ON ..
+
 cmake --build .
 ./dene
+
+
+sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 60
+sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 60
+
+
+sudo update-alternatives --config gcc
+sudo update-alternatives --config g++

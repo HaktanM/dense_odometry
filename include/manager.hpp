@@ -31,7 +31,8 @@ public:
         _depthVariancePtr = (float*)malloc(_depth_byte_size);      // Memory in Host
 
         _estimatedFlowPtr = (float*)malloc(_flow_byte_size);       // Memory in Host
-        _flowResidualPtr     = (float*)malloc(_flow_byte_size);       // Memory in Host
+        _flowResidualPtr     = (float*)malloc(_flow_byte_size);       // Memory in Host 
+        _flowJacobeanPtr     = (float*)malloc(_flow_byte_size * 6);
     }
 
     void getExtendedBodyPoseGT(int idx, Eigen::Matrix3d &R_b_g, Eigen::Vector3d &v_gb_g, Eigen::Vector3d &t_gb_g);
@@ -77,6 +78,7 @@ public:
 
     float *_estimatedFlowPtr;       // Pointer to hold estimated flows
     float *_flowResidualPtr;       // Pointer to hold flow residual
+    float *_flowJacobeanPtr; 
 
     ManagerGPU _GPUhandler;
     int _depth_byte_size, _flow_byte_size;
