@@ -15,7 +15,7 @@ int main(){
     _options.linear_solver_type             = ceres::DENSE_QR;
     _options.minimizer_progress_to_stdout   = false;
     _options.trust_region_strategy_type     = ceres::LEVENBERG_MARQUARDT;
-    _options.max_num_iterations             = 50;
+    _options.max_num_iterations             = 20;
     _options.num_threads                    = 8;
     _options.min_trust_region_radius        = 1e-12;
 
@@ -44,15 +44,16 @@ int main(){
 
         auto start = std::chrono::steady_clock::now();
         double x[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-        ceres::CostFunction* flow_constraint = new ceres::NumericDiffCostFunction<SOLVER::FlowConstraint, ceres::CENTRAL, residual_size, 6>(
-            new SOLVER::FlowConstraint(manager, R_c0_c1, t_c0_c1));
+        // ceres::CostFunction* flow_constraint = new ceres::NumericDiffCostFunction<SOLVER::FlowConstraint, ceres::CENTRAL, residual_size, 6>(
+        //     new SOLVER::FlowConstraint(manager, R_c0_c1, t_c0_c1));
+
+        ceres::CostFunction* flow_constraint = new SOLVER::FlowConstraint(manager, R_c0_c1, t_c0_c1);
 
         ceres::Problem problem;
         ceres::Solver::Summary summary;
         problem.AddResidualBlock(flow_constraint, nullptr, x);
 
         ceres::Solve(_options, &problem, &summary);
-        
         
         auto end = std::chrono::steady_clock::now();
         auto elapsed_milliseconds = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -72,11 +73,11 @@ int main(){
         std::cout << "GT TR: " << -t_pert[0] << " " << -t_pert[1] << " " << -t_pert[2] << std::endl;
         std::cout << "ES TR: " << x[3] << " " << x[4] << " " << x[5] << std::endl;
         
-        // cv::Mat flow_debug_img, debug_depth_image;
-        // manager->visualizeEstimatedDepthWithActualDepth(idx, debug_depth_image);
+        cv::Mat flow_debug_img, debug_depth_image;
+        manager->visualizeEstimatedDepthWithActualDepth(idx, debug_depth_image);
         
-        // cv::imshow("debug_depth_image", debug_depth_image);
-        // cv::waitKey(1);
+        cv::imshow("debug_depth_image", debug_depth_image);
+        cv::waitKey(1);
 
         manager->propagateDepth();
         std::cout << "--------------------" << std::endl;
